@@ -218,31 +218,3 @@ jobs:
           npm publish --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create release artifacts
-        run: |
-          mkdir -p release-artifacts
-          
-          # Copy built distributions
-          cp -r src/oslc-postmessage-helper/dist release-artifacts/postmessage-helper-dist
-          cp -r src/oslc-selection-webcomponent/dist release-artifacts/selection-webcomponent-dist
-          
-          # Copy demo
-          cp -r src/oslc-selection-demo release-artifacts/demo
-          
-          # Create archive
-          tar -czf release-artifacts/oslc-selection-utils-${{ github.ref_name }}.tar.gz \
-            -C release-artifacts \
-            postmessage-helper-dist \
-            selection-webcomponent-dist \
-            demo
-
-      - name: Upload release artifacts
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release-artifacts/oslc-selection-utils-${{ github.ref_name }}.tar.gz
-          asset_name: oslc-selection-utils-${{ github.ref_name }}.tar.gz
-          asset_content_type: application/gzip

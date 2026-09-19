@@ -49,6 +49,7 @@
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/jest": "^29.5.8",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.5.2",
     "rimraf": "^5.0.5",
     "rollup": "^4.6.1",
     "rollup-plugin-dts": "^6.1.0",

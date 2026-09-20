@@ -6,11 +6,7 @@ const packageVersion = JSON.parse(
 ).version
 
 const shortCommitSha = process.env.GITHUB_SHA?.slice(0, 7) ?? 'local'
-const buildVersion = process.env.VITE_BUILD_VERSION ?? (
-  packageVersion === '999.9.9'
-    ? `${packageVersion}+${shortCommitSha}`
-    : `v${packageVersion}`
-)
+const buildVersion = process.env.VITE_BUILD_VERSION ?? `v${packageVersion}+${shortCommitSha}`
 
 export default defineConfig({
   base: './',

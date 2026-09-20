@@ -59,7 +59,9 @@
     "npm": ">=7.0.0"
   },
   "devDependencies": {
-    "serve": "^14.0.0"
+    "jest-environment-jsdom": "^30.5.2",
+    "serve": "^14.0.0",
+    "ts-jest": "^29.4.12"
   },
   "dependencies": {
     "@oslc/postmessage-helper": "^0.1.0",

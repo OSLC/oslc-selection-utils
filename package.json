@@ -1,6 +1,6 @@
 {
   "name": "oslc-selection-utils",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "OSLC Selection utilities including postMessage helper and web component",
   "private": true,
   "type": "module",

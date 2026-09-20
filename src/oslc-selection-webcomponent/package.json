@@ -1,6 +1,6 @@
 {
   "name": "@oslc/selection-webcomponent",
-  "version": "0.1.0",
+  "version": "999.9.9",
   "type": "module",
   "description": "A web component for OSLC selection dialogs using standard HTML dialog and iframe",
   "main": "dist/index.js",
@@ -45,7 +45,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@oslc/postmessage-helper": "*"
+    "@oslc/postmessage-helper": "^999.9.9"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",

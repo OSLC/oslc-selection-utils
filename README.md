@@ -107,9 +107,10 @@ gh workflow run release.yml --repo OSLC/oslc-selection-utils --ref main \
   -f version=0.1.3
 ```
 
-The workflow updates the package versions, commits them to `main`, creates an
-annotated `v0.1.3` tag on that exact commit, and creates the GitHub release.
-The CI/CD workflow then publishes and deploys from that tag.
+The workflow creates a release-only commit with the package versions, creates
+an annotated `v0.1.3` tag on that exact commit, and creates the GitHub release.
+The versioned commit is reachable through the tag but is not pushed to the
+`main` branch. The CI/CD workflow then publishes and deploys from that tag.
 
 ### Demo Deployment
 

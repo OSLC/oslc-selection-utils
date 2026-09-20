@@ -1,5 +1,11 @@
 // Import the OSLC Selection WebComponent
 import '@oslc/oslc-selection-webcomponent'
+import { buildVersion } from './build-info.js'
+
+const buildInfoElement = document.getElementById('build-version')
+if (buildInfoElement) {
+    buildInfoElement.textContent = `Using @oslc/postmessage-helper and @oslc/selection-webcomponent ${buildVersion}`
+}
 
 // Load OSLC components
 async function loadOslcComponents() {
@@ -42,4 +48,4 @@ window.updateBuildStatus = function() {
 }
 
 // Load components immediately
-loadOslcComponents() 
+loadOslcComponents()

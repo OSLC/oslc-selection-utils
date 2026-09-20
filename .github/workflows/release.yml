@@ -91,7 +91,7 @@ jobs:
           npm run test --workspace=@oslc/selection-webcomponent || echo "No tests configured"
           npm run build --workspace=@oslc/selection-webcomponent
 
-      - name: Commit release metadata to main
+      - name: Commit release metadata
         env:
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
@@ -104,7 +104,6 @@ jobs:
             src/oslc-selection-webcomponent/package.json
           git diff --cached --check
           git commit -m "chore: release $RELEASE_VERSION"
-          git push origin HEAD:main
 
       - name: Tag exact release commit
         env:

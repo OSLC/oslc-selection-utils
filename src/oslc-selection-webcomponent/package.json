@@ -38,8 +38,11 @@
   "license": "EPL-1.0 OR EDL-1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oslc-op/refimpl.git",
+    "url": "git+https://github.com/OSLC/oslc-selection-utils.git",
     "directory": "src/oslc-selection-webcomponent"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@oslc/postmessage-helper": "*"

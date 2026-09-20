@@ -2,7 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/OSLC/oslc-selection-utils/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/OSLC/oslc-selection-utils/actions/workflows/ci-cd.yml)
 [![GitHub Pages](https://img.shields.io/badge/demo-github%20pages-blue)](https://OSLC.github.io/olsc-selection-utils/)
-[![npm package](https://img.shields.io/badge/npm-@oslc/selection--webcomponent-red)](https://github.com/OSLC/oslc-selection-utils/packages)
+[![npm package](https://img.shields.io/npm/v/@oslc/selection-webcomponent?label=npm)](https://www.npmjs.com/package/@oslc/selection-webcomponent)
 
 A comprehensive toolkit for implementing OSLC Selection dialogs in web applications, featuring modern Web Components with extensive styling capabilities.
 
@@ -11,9 +11,6 @@ A comprehensive toolkit for implementing OSLC Selection dialogs in web applicati
 ### Using the Published Packages
 
 ```bash
-# Configure npm for GitHub registry
-npm config set @oslc:registry https://npm.pkg.github.com
-
 # Install the components
 npm install @oslc/postmessage-helper @oslc/selection-webcomponent
 ```
@@ -90,11 +87,29 @@ See the [live demo](https://OSLC.github.io/olsc-selection-utils/) for comprehens
 - Node.js 22+
 - PowerShell 7+ (for Windows scripts)
 
-### GitHub Registry
+### npm Registry
 
 Packages are published to:
-- `https://npm.pkg.github.com/@oslc/postmessage-helper`
-- `https://npm.pkg.github.com/@oslc/selection-webcomponent`
+- [@oslc/postmessage-helper](https://www.npmjs.com/package/@oslc/postmessage-helper)
+- [@oslc/selection-webcomponent](https://www.npmjs.com/package/@oslc/selection-webcomponent)
+
+Publishing is triggered by a published GitHub release. Each package must have
+the `OSLC/oslc-selection-utils` repository's `.github/workflows/ci-cd.yml`
+workflow configured as an npm
+[Trusted Publisher](https://docs.npmjs.com/trusted-publishers/).
+Because these are new npm packages, an `@oslc` organization maintainer must
+publish each package once before its Trusted Publisher can be configured.
+
+To publish a release from `main`, let GitHub create the tag and release:
+
+```bash
+gh release create v0.1.3 --repo OSLC/oslc-selection-utils --target main \
+  --generate-notes
+```
+
+The repository keeps the package versions at `999.9.9`. The release workflow
+substitutes the release version only in its runner before publishing. The
+website identifies the source as `v0.1.3+<short SHA>`.
 
 ### Demo Deployment
 

@@ -100,6 +100,17 @@ workflow configured as an npm
 Because these are new npm packages, an `@oslc` organization maintainer must
 publish each package once before its Trusted Publisher can be configured.
 
+To prepare a release, run the release workflow from `main`:
+
+```bash
+gh workflow run release.yml --repo OSLC/oslc-selection-utils --ref main \
+  -f version=0.1.3
+```
+
+The workflow updates the package versions, commits them to `main`, creates an
+annotated `v0.1.3` tag on that exact commit, and creates the GitHub release.
+The CI/CD workflow then publishes and deploys from that tag.
+
 ### Demo Deployment
 
 Live demo automatically deployed to: https://OSLC.github.io/olsc-selection-utils/

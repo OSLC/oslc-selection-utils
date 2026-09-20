@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
-      contents: write
+      contents: read
       packages: write
       id-token: write
     steps:
@@ -199,10 +199,12 @@ jobs:
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
           echo "Release version: $RELEASE_VERSION"
 
-      - name: Update package versions and metadata
+      - name: Update package metadata for legacy manual reruns
+        if: github.event_name == 'workflow_dispatch'
         run: |
-          # Keep the private root package metadata aligned with the release.
-          # npm version also updates the root package-lock.json in the runner.
+          # Release tags created by release.yml already contain the exact
+          # release metadata. Keep this compatibility path for v0.1.2 and
+          # other tags created before release preparation was automated.
           npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
           npm pkg set dependencies.@oslc/selection-webcomponent="^$RELEASE_VERSION"
@@ -224,6 +226,21 @@ jobs:
           # Update dependency reference to use the new version
           npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
 
+      - name: Verify release metadata
+        if: github.event_name == 'release'
+        run: |
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          HELPER_VERSION=$(node -p "require('./src/oslc-postmessage-helper/package.json').version")
+          WEBCOMPONENT_VERSION=$(node -p "require('./src/oslc-selection-webcomponent/package.json').version")
+          HELPER_DEPENDENCY=$(node -p "require('./src/oslc-selection-webcomponent/package.json').dependencies['@oslc/postmessage-helper']")
+
+          test "$ROOT_VERSION" = "$RELEASE_VERSION"
+          test "$HELPER_VERSION" = "$RELEASE_VERSION"
+          test "$WEBCOMPONENT_VERSION" = "$RELEASE_VERSION"
+          test "$HELPER_DEPENDENCY" = "^$RELEASE_VERSION"
+
+          echo "Release metadata matches $RELEASE_VERSION"
+
       - name: Install dependencies
         run: npm install
 
@@ -232,39 +249,41 @@ jobs:
           npm run build --workspace=@oslc/postmessage-helper
 
       - name: Publish postmessage-helper to GitHub Packages
-        run: npm publish --workspace=@oslc/postmessage-helper --registry=${{ env.REGISTRY_URL }} --tag latest
+        run: |
+          if npm view "@oslc/postmessage-helper@$RELEASE_VERSION" version --registry="${{ env.REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/postmessage-helper@$RELEASE_VERSION already exists on GitHub Packages"
+          else
+            npm publish --workspace=@oslc/postmessage-helper --registry=${{ env.REGISTRY_URL }} --tag latest
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish postmessage-helper to npm
-        run: npm publish --workspace=@oslc/postmessage-helper --registry=${{ env.NPM_REGISTRY_URL }} --access public --tag latest
+        run: |
+          if npm view "@oslc/postmessage-helper@$RELEASE_VERSION" version --registry="${{ env.NPM_REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/postmessage-helper@$RELEASE_VERSION already exists on npm"
+          else
+            npm publish --workspace=@oslc/postmessage-helper --registry=${{ env.NPM_REGISTRY_URL }} --access public --tag latest
+          fi
 
       - name: Build selection-webcomponent
         run: |
           npm run build --workspace=@oslc/selection-webcomponent
 
       - name: Publish selection-webcomponent to GitHub Packages
-        run: npm publish --workspace=@oslc/selection-webcomponent --registry=${{ env.REGISTRY_URL }} --tag latest
+        run: |
+          if npm view "@oslc/selection-webcomponent@$RELEASE_VERSION" version --registry="${{ env.REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/selection-webcomponent@$RELEASE_VERSION already exists on GitHub Packages"
+          else
+            npm publish --workspace=@oslc/selection-webcomponent --registry=${{ env.REGISTRY_URL }} --tag latest
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish selection-webcomponent to npm
-        run: npm publish --workspace=@oslc/selection-webcomponent --registry=${{ env.NPM_REGISTRY_URL }} --access public --tag latest
-
-      - name: Commit release versions to main
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            package.json \
-            package-lock.json \
-            src/oslc-postmessage-helper/package.json \
-            src/oslc-selection-webcomponent/package.json
-
-          if git diff --cached --quiet; then
-            echo "No release metadata changes to commit"
-            exit 0
+          if npm view "@oslc/selection-webcomponent@$RELEASE_VERSION" version --registry="${{ env.NPM_REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/selection-webcomponent@$RELEASE_VERSION already exists on npm"
+          else
+            npm publish --workspace=@oslc/selection-webcomponent --registry=${{ env.NPM_REGISTRY_URL }} --access public --tag latest
           fi
-
-          git commit -m "chore: release $RELEASE_VERSION"
-          git push origin HEAD:main

@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2025 Andrew Berezovskyi
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * @jest-environment node
+ */
+
 import { OslcPostMessageHelper } from './oslc-postmessage-helper.js';
 import { OslcProtocol } from './types.js';
 

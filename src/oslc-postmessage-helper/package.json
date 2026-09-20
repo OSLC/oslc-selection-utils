@@ -1,6 +1,6 @@
 {
   "name": "@oslc/postmessage-helper",
-  "version": "0.1.0",
+  "version": "999.9.9",
   "type": "module",
   "description": "A TypeScript module for OSLC postMessage communication in delegated UIs",
   "main": "dist/index.js",

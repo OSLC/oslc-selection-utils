@@ -1,6 +1,6 @@
 {
   "name": "oslc-selection-utils",
-  "version": "0.1.0",
+  "version": "999.9.9",
   "description": "OSLC Selection utilities including postMessage helper and web component",
   "private": true,
   "type": "module",
@@ -64,7 +64,7 @@
     "ts-jest": "^29.4.12"
   },
   "dependencies": {
-    "@oslc/postmessage-helper": "^0.1.0",
-    "@oslc/selection-webcomponent": "^0.1.0"
+    "@oslc/postmessage-helper": "^999.9.9",
+    "@oslc/selection-webcomponent": "^999.9.9"
   }
 }

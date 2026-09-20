@@ -100,17 +100,16 @@ workflow configured as an npm
 Because these are new npm packages, an `@oslc` organization maintainer must
 publish each package once before its Trusted Publisher can be configured.
 
-To prepare a release, run the release workflow from `main`:
+To publish a release from `main`, let GitHub create the tag and release:
 
 ```bash
-gh workflow run release.yml --repo OSLC/oslc-selection-utils --ref main \
-  -f version=0.1.3
+gh release create v0.1.3 --repo OSLC/oslc-selection-utils --target main \
+  --generate-notes
 ```
 
-The workflow creates a release-only commit with the package versions, creates
-an annotated `v0.1.3` tag on that exact commit, and creates the GitHub release.
-The versioned commit is reachable through the tag but is not pushed to the
-`main` branch. The CI/CD workflow then publishes and deploys from that tag.
+The repository keeps the package versions at `999.9.9`. The release workflow
+substitutes the release version only in its runner before publishing. The
+website identifies the source as `v0.1.3+<short SHA>`.
 
 ### Demo Deployment
 

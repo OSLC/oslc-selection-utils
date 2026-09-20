@@ -144,7 +144,23 @@ jobs:
         run: npm install
 
       - name: Build components for demo
+        env:
+          WORKFLOW_EVENT: ${{ github.event_name }}
+          REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
+          if [ "$WORKFLOW_EVENT" = "release" ]; then
+            RELEASE_TAG="$GITHUB_REF_NAME"
+          elif [ -n "$REQUESTED_RELEASE_TAG" ]; then
+            RELEASE_TAG="$REQUESTED_RELEASE_TAG"
+          else
+            RELEASE_TAG="999.9.9"
+          fi
+
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+          BUILD_VERSION="v${RELEASE_VERSION}+$(git rev-parse --short=7 HEAD)"
+          export VITE_BUILD_VERSION="$BUILD_VERSION"
+          echo "Building demo with version: $BUILD_VERSION"
+
           # Build both components using workspace commands
           npm run build --workspace=@oslc/postmessage-helper
           npm run build --workspace=@oslc/selection-webcomponent          
@@ -199,12 +215,10 @@ jobs:
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
           echo "Release version: $RELEASE_VERSION"
 
-      - name: Update package metadata for legacy manual reruns
-        if: github.event_name == 'workflow_dispatch'
+      - name: Prepare package metadata for publication
         run: |
-          # Release tags created by release.yml already contain the exact
-          # release metadata. Keep this compatibility path for v0.1.2 and
-          # other tags created before release preparation was automated.
+          # Keep the repository and release tag on the stable placeholder
+          # version. Substitute the release version only in this runner.
           npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
           npm pkg set dependencies.@oslc/selection-webcomponent="^$RELEASE_VERSION"
@@ -225,21 +239,6 @@ jobs:
           
           # Update dependency reference to use the new version
           npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
-
-      - name: Verify release metadata
-        if: github.event_name == 'release'
-        run: |
-          ROOT_VERSION=$(node -p "require('./package.json').version")
-          HELPER_VERSION=$(node -p "require('./src/oslc-postmessage-helper/package.json').version")
-          WEBCOMPONENT_VERSION=$(node -p "require('./src/oslc-selection-webcomponent/package.json').version")
-          HELPER_DEPENDENCY=$(node -p "require('./src/oslc-selection-webcomponent/package.json').dependencies['@oslc/postmessage-helper']")
-
-          test "$ROOT_VERSION" = "$RELEASE_VERSION"
-          test "$HELPER_VERSION" = "$RELEASE_VERSION"
-          test "$WEBCOMPONENT_VERSION" = "$RELEASE_VERSION"
-          test "$HELPER_DEPENDENCY" = "^$RELEASE_VERSION"
-
-          echo "Release metadata matches $RELEASE_VERSION"
 
       - name: Install dependencies
         run: npm install

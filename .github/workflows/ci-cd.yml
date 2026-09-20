@@ -7,6 +7,12 @@ on:
     branches: [ main ]
   release:
     types: [ published ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to publish and deploy, for example v0.1.2
+        required: true
+        type: string
 
 env:
   NODE_VERSION: '22'
@@ -20,6 +26,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -112,7 +120,7 @@ jobs:
     name: Deploy Demo to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     permissions:
       contents: read
       pages: write
@@ -123,6 +131,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -156,7 +166,7 @@ jobs:
     name: Publish Release Packages
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
       packages: write
@@ -166,6 +176,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -183,7 +194,8 @@ jobs:
 
       - name: Extract version from release tag
         run: |
-          RELEASE_VERSION=${GITHUB_REF#refs/tags/v}
+          RELEASE_TAG="${{ inputs.release_tag || github.ref_name }}"
+          RELEASE_VERSION="${RELEASE_TAG#v}"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
           echo "Release version: $RELEASE_VERSION"
 

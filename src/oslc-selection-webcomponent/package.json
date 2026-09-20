@@ -1,6 +1,6 @@
 {
   "name": "@oslc/selection-webcomponent",
-  "version": "0.1.0",
+  "version": "999.9.9",
   "type": "module",
   "description": "A web component for OSLC selection dialogs using standard HTML dialog and iframe",
   "main": "dist/index.js",
@@ -38,17 +38,21 @@
   "license": "EPL-1.0 OR EDL-1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oslc-op/refimpl.git",
+    "url": "git+https://github.com/OSLC/oslc-selection-utils.git",
     "directory": "src/oslc-selection-webcomponent"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@oslc/postmessage-helper": "*"
+    "@oslc/postmessage-helper": "^999.9.9"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/jest": "^29.5.8",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.5.2",
     "rimraf": "^5.0.5",
     "rollup": "^4.6.1",
     "rollup-plugin-dts": "^6.1.0",

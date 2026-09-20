@@ -7,10 +7,17 @@ on:
     branches: [ main ]
   release:
     types: [ published ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to publish and deploy, for example v0.1.2
+        required: true
+        type: string
 
 env:
   NODE_VERSION: '22'
   REGISTRY_URL: 'https://npm.pkg.github.com'
+  NPM_REGISTRY_URL: 'https://registry.npmjs.org'
 
 jobs:
   test:
@@ -19,6 +26,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -109,9 +118,9 @@ jobs:
 
   deploy-demo:
     name: Deploy Demo to GitHub Pages
-    needs: [test, build-and-publish]
+    needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     permissions:
       contents: read
       pages: write
@@ -122,6 +131,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -133,7 +144,23 @@ jobs:
         run: npm install
 
       - name: Build components for demo
+        env:
+          WORKFLOW_EVENT: ${{ github.event_name }}
+          REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
+          if [ "$WORKFLOW_EVENT" = "release" ]; then
+            RELEASE_TAG="$GITHUB_REF_NAME"
+          elif [ -n "$REQUESTED_RELEASE_TAG" ]; then
+            RELEASE_TAG="$REQUESTED_RELEASE_TAG"
+          else
+            RELEASE_TAG="999.9.9"
+          fi
+
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+          BUILD_VERSION="v${RELEASE_VERSION}+$(git rev-parse --short=7 HEAD)"
+          export VITE_BUILD_VERSION="$BUILD_VERSION"
+          echo "Building demo with version: $BUILD_VERSION"
+
           # Build both components using workspace commands
           npm run build --workspace=@oslc/postmessage-helper
           npm run build --workspace=@oslc/selection-webcomponent          
@@ -155,47 +182,60 @@ jobs:
     name: Publish Release Packages
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: ${{ env.REGISTRY_URL }}
-          cache: 'npm'
+          registry-url: ${{ env.NPM_REGISTRY_URL }}
 
-      - name: Configure npm for GitHub Registry
+      - name: Set up npm Trusted Publishing
+        run: npm install --global npm@11.5.1
+
+      - name: Configure npm for GitHub Packages
         run: |
-          echo "@oslc:registry=${{ env.REGISTRY_URL }}" >> ~/.npmrc
-          echo "${{ env.REGISTRY_URL }}/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "@oslc:registry=${{ env.REGISTRY_URL }}" >> "$NPM_CONFIG_USERCONFIG"
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> "$NPM_CONFIG_USERCONFIG"
 
       - name: Extract version from release tag
         run: |
-          RELEASE_VERSION=${GITHUB_REF#refs/tags/v}
+          RELEASE_TAG="${{ inputs.release_tag || github.ref_name }}"
+          RELEASE_VERSION="${RELEASE_TAG#v}"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
           echo "Release version: $RELEASE_VERSION"
 
-      - name: Update package versions and repository URLs
+      - name: Prepare package metadata for publication
         run: |
+          # Keep the repository and release tag on the stable placeholder
+          # version. Substitute the release version only in this runner.
+          npm version "$RELEASE_VERSION" --no-git-tag-version
+          npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
+          npm pkg set dependencies.@oslc/selection-webcomponent="^$RELEASE_VERSION"
+
           # Update postmessage-helper version
           cd src/oslc-postmessage-helper
-          npm version $RELEASE_VERSION --no-git-tag-version
+          npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set repository.url="git+https://github.com/${{ github.repository }}.git"
           npm pkg set repository.directory="src/oslc-postmessage-helper"
-          npm pkg set publishConfig.registry="${{ env.REGISTRY_URL }}"
+          npm pkg set publishConfig.access="public"
           
           # Update selection-webcomponent version
           cd ../oslc-selection-webcomponent
-          npm version $RELEASE_VERSION --no-git-tag-version
+          npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set repository.url="git+https://github.com/${{ github.repository }}.git"
           npm pkg set repository.directory="src/oslc-selection-webcomponent"
-          npm pkg set publishConfig.registry="${{ env.REGISTRY_URL }}"
+          npm pkg set publishConfig.access="public"
           
           # Update dependency reference to use the new version
           npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
@@ -203,18 +243,46 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build and publish postmessage-helper
+      - name: Build postmessage-helper
         run: |
           npm run build --workspace=@oslc/postmessage-helper
-          cd src/oslc-postmessage-helper
-          npm publish --tag latest
+
+      - name: Publish postmessage-helper to GitHub Packages
+        run: |
+          if npm view "@oslc/postmessage-helper@$RELEASE_VERSION" version --registry="${{ env.REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/postmessage-helper@$RELEASE_VERSION already exists on GitHub Packages"
+          else
+            npm publish --workspace=@oslc/postmessage-helper --registry=${{ env.REGISTRY_URL }} --tag latest
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and publish selection-webcomponent
+      - name: Publish postmessage-helper to npm
+        run: |
+          if npm view "@oslc/postmessage-helper@$RELEASE_VERSION" version --registry="${{ env.NPM_REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/postmessage-helper@$RELEASE_VERSION already exists on npm"
+          else
+            npm publish --workspace=@oslc/postmessage-helper --registry=${{ env.NPM_REGISTRY_URL }} --access public --tag latest
+          fi
+
+      - name: Build selection-webcomponent
         run: |
           npm run build --workspace=@oslc/selection-webcomponent
-          cd src/oslc-selection-webcomponent
-          npm publish --tag latest
+
+      - name: Publish selection-webcomponent to GitHub Packages
+        run: |
+          if npm view "@oslc/selection-webcomponent@$RELEASE_VERSION" version --registry="${{ env.REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/selection-webcomponent@$RELEASE_VERSION already exists on GitHub Packages"
+          else
+            npm publish --workspace=@oslc/selection-webcomponent --registry=${{ env.REGISTRY_URL }} --tag latest
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish selection-webcomponent to npm
+        run: |
+          if npm view "@oslc/selection-webcomponent@$RELEASE_VERSION" version --registry="${{ env.NPM_REGISTRY_URL }}" >/dev/null 2>&1; then
+            echo "@oslc/selection-webcomponent@$RELEASE_VERSION already exists on npm"
+          else
+            npm publish --workspace=@oslc/selection-webcomponent --registry=${{ env.NPM_REGISTRY_URL }} --access public --tag latest
+          fi

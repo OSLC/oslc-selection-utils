@@ -9,6 +9,7 @@ import { OslcProtocol, OslcResource, OslcResponse } from '../types.js';
 
 describe('OslcPostMessageHelper', () => {
   let originalWindowName: string;
+  const originalWindowParent = window.parent;
 
   beforeEach(() => {
     originalWindowName = window.name;
@@ -20,6 +21,8 @@ describe('OslcPostMessageHelper', () => {
 
   afterEach(() => {
     window.name = originalWindowName;
+    delete (window as any).parent;
+    (window as any).parent = originalWindowParent;
     window.location.hash = '';
   });
 
@@ -171,7 +174,7 @@ describe('OslcPostMessageHelper', () => {
 
       it('should ignore message if source does not match iframe contentWindow', () => {
         const messageHandler = jest.fn();
-        OslcPostMessageHelper.registerRawResponseListener(mockIframe, messageHandler);
+        const cleanup = OslcPostMessageHelper.registerRawResponseListener(mockIframe, messageHandler);
 
         const invalidEvent = new MessageEvent('message', {
           data: 'oslc-response:{"oslc:results":[]}',
@@ -181,11 +184,12 @@ describe('OslcPostMessageHelper', () => {
         window.dispatchEvent(invalidEvent);
 
         expect(messageHandler).not.toHaveBeenCalled();
+        cleanup();
       });
 
       it('should ignore message if data does not start with oslc-response:', () => {
         const messageHandler = jest.fn();
-        OslcPostMessageHelper.registerRawResponseListener(mockIframe, messageHandler);
+        const cleanup = OslcPostMessageHelper.registerRawResponseListener(mockIframe, messageHandler);
 
         const invalidEvent = new MessageEvent('message', {
           data: 'other-prefix:hello',
@@ -195,6 +199,7 @@ describe('OslcPostMessageHelper', () => {
         window.dispatchEvent(invalidEvent);
 
         expect(messageHandler).not.toHaveBeenCalled();
+        cleanup();
       });
     });
 
@@ -229,7 +234,7 @@ describe('OslcPostMessageHelper', () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         const resourceHandler = jest.fn();
 
-        OslcPostMessageHelper.registerSelectionListener(mockIframe, resourceHandler);
+        const cleanup = OslcPostMessageHelper.registerSelectionListener(mockIframe, resourceHandler);
 
         const invalidEvent = new MessageEvent('message', {
           data: 'oslc-response:invalid-json',
@@ -240,6 +245,7 @@ describe('OslcPostMessageHelper', () => {
 
         expect(consoleErrorSpy).toHaveBeenCalled();
         expect(resourceHandler).not.toHaveBeenCalled();
+        cleanup();
       });
     });
 
@@ -270,7 +276,7 @@ describe('OslcPostMessageHelper', () => {
 
       it('should do nothing if oslc:results array is empty', () => {
         const resourceHandler = jest.fn();
-        OslcPostMessageHelper.registerCreationListener(mockIframe, resourceHandler);
+        const cleanup = OslcPostMessageHelper.registerCreationListener(mockIframe, resourceHandler);
 
         const emptyEvent = new MessageEvent('message', {
           data: `oslc-response:${JSON.stringify({ 'oslc:results': [] })}`,
@@ -280,13 +286,14 @@ describe('OslcPostMessageHelper', () => {
         window.dispatchEvent(emptyEvent);
 
         expect(resourceHandler).not.toHaveBeenCalled();
+        cleanup();
       });
 
       it('should handle JSON parse error gracefully', () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         const resourceHandler = jest.fn();
 
-        OslcPostMessageHelper.registerCreationListener(mockIframe, resourceHandler);
+        const cleanup = OslcPostMessageHelper.registerCreationListener(mockIframe, resourceHandler);
 
         const invalidEvent = new MessageEvent('message', {
           data: 'oslc-response:{bad json',
@@ -297,6 +304,7 @@ describe('OslcPostMessageHelper', () => {
 
         expect(consoleErrorSpy).toHaveBeenCalled();
         expect(resourceHandler).not.toHaveBeenCalled();
+        cleanup();
       });
     });
   });

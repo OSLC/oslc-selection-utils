@@ -218,9 +218,21 @@ export class OslcPostMessageHelper {
    * Responds using the window name protocol
    */
   private static respondWithWindowName(response: string): void {
-    const returnURL = window.name;
+    let returnURL: URL;
+    try {
+      returnURL = new URL(window.name, window.location.href);
+    } catch {
+      console.warn('Ignoring invalid OSLC Window Name return URL');
+      return;
+    }
+
+    if (returnURL.protocol !== 'http:' && returnURL.protocol !== 'https:') {
+      console.warn(`Ignoring OSLC Window Name return URL with ${returnURL.protocol} scheme`);
+      return;
+    }
+
     window.name = response;
-    window.location.href = returnURL;
+    window.location.href = returnURL.href;
   }
 
   /**

@@ -47,6 +47,26 @@ test('rejects javascript Window Name return URLs before navigation', () => {
   );
 });
 
+test('rejects file Window Name return URLs before navigation', () => {
+  const window: MockWindow = {
+    name: 'file:///Users/example/return.html',
+    location: {
+      hash: OslcProtocol.WindowName,
+      href: 'https://provider.example/dialog',
+    },
+  };
+  installWindow(window);
+  const warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+  OslcPostMessageHelper.sendResponse('oslc-response:{}', OslcProtocol.WindowName);
+
+  expect(window.name).toBe('file:///Users/example/return.html');
+  expect(window.location.href).toBe('https://provider.example/dialog');
+  expect(warning).toHaveBeenCalledWith(
+    'Ignoring OSLC Window Name return URL with file: scheme',
+  );
+});
+
 test('preserves valid HTTPS Window Name return URLs', () => {
   const window: MockWindow = {
     name: 'https://consumer.example/return',

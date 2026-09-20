@@ -110,9 +110,9 @@ jobs:
 
   deploy-demo:
     name: Deploy Demo to GitHub Pages
-    needs: [test, build-and-publish]
+    needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     permissions:
       contents: read
       pages: write
@@ -178,8 +178,8 @@ jobs:
 
       - name: Configure npm for GitHub Packages
         run: |
-          echo "@oslc:registry=${{ env.REGISTRY_URL }}" >> ~/.npmrc
-          echo "${{ env.REGISTRY_URL }}/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "@oslc:registry=${{ env.REGISTRY_URL }}" >> "$NPM_CONFIG_USERCONFIG"
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> "$NPM_CONFIG_USERCONFIG"
 
       - name: Extract version from release tag
         run: |

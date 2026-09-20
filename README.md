@@ -97,6 +97,8 @@ Publishing is triggered by a published GitHub release. Each package must have
 the `OSLC/oslc-selection-utils` repository's `.github/workflows/ci-cd.yml`
 workflow configured as an npm
 [Trusted Publisher](https://docs.npmjs.com/trusted-publishers/).
+Because these are new npm packages, an `@oslc` organization maintainer must
+publish each package once before its Trusted Publisher can be configured.
 
 ### Demo Deployment
 

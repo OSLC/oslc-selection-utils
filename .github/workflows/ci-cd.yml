@@ -223,16 +223,18 @@ jobs:
           npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
           npm pkg set dependencies.@oslc/selection-webcomponent="^$RELEASE_VERSION"
 
+          # Clear the webcomponent's placeholder dependency before versioning the helper.
+          cd src/oslc-selection-webcomponent
+          npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
+          cd ../oslc-postmessage-helper
+
           # Update postmessage-helper version
-          cd src/oslc-postmessage-helper
           npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set repository.url="git+https://github.com/${{ github.repository }}.git"
           npm pkg set repository.directory="src/oslc-postmessage-helper"
           npm pkg set publishConfig.access="public"
           
           cd ../oslc-selection-webcomponent
-          # Update the helper dependency before npm version resolves this package.
-          npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
           # Update selection-webcomponent version
           npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set repository.url="git+https://github.com/${{ github.repository }}.git"

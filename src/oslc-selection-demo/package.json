@@ -17,7 +17,7 @@
     "@oslc/oslc-selection-webcomponent": "file:../oslc-selection-webcomponent"
   },
   "devDependencies": {
-    "vite": "^5.0.8",
-    "serve": "^14.0.0"
+    "vite": "^7.3.6",
+    "serve": "^14.2.6"
   }
 } 

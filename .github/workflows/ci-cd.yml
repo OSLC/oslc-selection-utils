@@ -230,15 +230,14 @@ jobs:
           npm pkg set repository.directory="src/oslc-postmessage-helper"
           npm pkg set publishConfig.access="public"
           
-          # Update selection-webcomponent version
           cd ../oslc-selection-webcomponent
+          # Update the helper dependency before npm version resolves this package.
+          npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
+          # Update selection-webcomponent version
           npm version "$RELEASE_VERSION" --no-git-tag-version
           npm pkg set repository.url="git+https://github.com/${{ github.repository }}.git"
           npm pkg set repository.directory="src/oslc-selection-webcomponent"
           npm pkg set publishConfig.access="public"
-          
-          # Update dependency reference to use the new version
-          npm pkg set dependencies.@oslc/postmessage-helper="^$RELEASE_VERSION"
 
       - name: Install dependencies
         run: npm install
